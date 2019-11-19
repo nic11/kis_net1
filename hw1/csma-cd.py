@@ -131,7 +131,7 @@ class Peer:
             not frame.is_silence() and frame.get_peer_id() != self.peer_id
 
         if frame.is_corrupt():
-            self.sleep_for = random.randint(0, 15)  # up to 16 ticks
+            self.sleep_for = random.randint(0, 7)  # up to 8 ticks
             self.is_transmitting = False
             return
 
@@ -157,13 +157,29 @@ class Peer:
         return self.transmitted_frames == len(self.frames)
 
 
-random.seed(1337)
+random.seed(13371)
 
 channel = Channel()
 
-channel.register_peer(Peer(b'Some data by peer 0', 0))
-channel.register_peer(Peer(b"Hello, I'm 1", 1))
-channel.register_peer(Peer(b"Dancin' is what to do", 2))
+all_data = [
+    b'Some data by peer 0',
+    b"Hello, I'm 1",
+    b"Dancin' is what to do",
+    b'Some stuff',
+    b'Some stuff',
+    b'Some stuff',
+    b'Some stuff',
+    b'Some stuff',
+    b'Some stuff',
+    b'Some stuff',
+    b'Some stuff',
+    b'Some stuff',
+    b'Some stuff',
+    b'Some stuff',
+]
+
+for i, data in enumerate(all_data):
+    channel.register_peer(Peer(data, i))
 
 frames = []
 
