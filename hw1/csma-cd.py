@@ -11,7 +11,7 @@ class Frame:
         if data is not None and len(data) > Frame.SIZE_LIMIT:
             raise Exception('frame too big')
         self._data = data
-        self._peer_id = peer_id  # not used by peers
+        self._peer_id = peer_id
     
     def is_corrupt(self):
         return self._data is None
@@ -70,7 +70,7 @@ class Channel:
         tried_frames = []
         for peer in self.peers:
             frame = peer.before_tick(tick)
-            print('Peer', peer.peer_id, 'tried to send', repr(frame._data))
+            print('Peer', peer.peer_id, 'tried to send', repr(frame))
             if not frame.is_silence():
                 tried_frames.append(frame)
 
@@ -107,6 +107,7 @@ class Peer:
         self.is_transmitting = False
         self.transmitted_frames = 0
         self.sleep_for = 0
+        self.somebody_was_transmitting = False
 
         # Used to build timeline
         self.peer_id = peer_id
@@ -116,7 +117,8 @@ class Peer:
             print(' data=', repr(frame.get_data()))
 
     def before_tick(self, tick):
-        if self.transmitted_frames != len(self.frames) and self.sleep_for == 0:
+        if self.transmitted_frames != len(self.frames) and self.sleep_for == 0 \
+                and not self.somebody_was_transmitting:
             self.is_transmitting = True
 
         if self.is_transmitting:
@@ -124,6 +126,10 @@ class Peer:
         return Frame.SILENCE  # might be either sleeping or not having data to send
 
     def after_tick(self, tick, frame):
+        somebody_was_transmitting_before = self.somebody_was_transmitting
+        self.somebody_was_transmitting = \
+            not frame.is_silence() and frame.get_peer_id() != self.peer_id
+
         if frame.is_corrupt():
             self.sleep_for = random.randint(0, 15)  # up to 16 ticks
             self.is_transmitting = False
@@ -141,10 +147,11 @@ class Peer:
                 self.is_transmitting = False
             return
 
-        # else, we had C H I L L
-        assert not self.is_transmitting
-        assert self.sleep_for == 0
-        assert self.transmitted_frames == len(self.frames)
+        if not somebody_was_transmitting_before:
+            # else, we had C H I L L
+            assert not self.is_transmitting
+            assert self.sleep_for == 0
+            assert self.transmitted_frames == len(self.frames)
     
     def is_done(self):
         return self.transmitted_frames == len(self.frames)
