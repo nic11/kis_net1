@@ -74,7 +74,11 @@ class Channel:
             if not frame.is_silence():
                 tried_frames.append(frame)
 
-        print('Tried to send', ', '.join(map(lambda p: str(p.peer_id), self.peers)))
+        print('Tried to send:', ', '.join(map(\
+            lambda p: str(p.peer_id), \
+                filter(lambda p: p.is_transmitting, self.peers)
+            )
+        ))
         
         frame = None
         if len(tried_frames) == 0:
